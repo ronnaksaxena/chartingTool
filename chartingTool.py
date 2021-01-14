@@ -1,34 +1,40 @@
 import datetime as dt
 import pandas_datareader as web
-import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
+import numpy as np
+import pandas as pd
 import mplfinance as mpf
+import matplotlib.pyplot as plt
 
-#Define Time Frame (change to a year ago)
+#Code for plotting data from csv file
+'''
+SPX = pd.read_csv('^GSPC.csv')
+#last 365 days
+SPX = SPX.tail(365)
 
-start = dt.datetime(2020,1,1)
+#sets dates as index
+SPX.iloc[:,0] = pd.to_datetime(SPX.iloc[:,0], format = '%Y-%m-%d')
+SPX = SPX.set_index(pd.DatetimeIndex(SPX['Date']))
+'''
+
+start = dt.datetime(2020,6,1)
 end = dt.datetime.now()
+ticker = input('Enter Ticker Symbol:')
 
-#Load Data
-ticker = 'AAPL' #str(input('Enter Ticker:'))
+#gets data and restructures it
 data = web.DataReader(ticker, 'yahoo', start, end)
-
-# Restructures data
-data = data[['Open','High','Low','Close']]
+data = data[['Open','High','Low','Close','Adj Close','Volume']]
 data.reset_index(inplace=True)
-data['Date'] = data['Date'].map(mdates.date2num)
+data = data.set_index(data['Date'])
 
-# Visualization
-ax = plt.subplot()
-ax.grid(True)
-ax.set_axisbelow(True)
-ax.set_title('{} Share Price'.format(ticker), color='white')
-ax.set_facecolor('black')
-ax.figure.set_facecolor('#121212')
-ax.tick_params(axis='x', colors='white')
-ax.tick_params(axis='y', colors='white')
-ax.xaxis_date()
-'''candlestick_ohlc(ax, data.values, width=0.5, colorup='g')'''
-mpf.plot(data.values)
-#plt.show()
+#design for candlestick chart
+kwargs = dict(type='candle',mav=(5,20),volume=False,title='{} Stock Price'.format(ticker))
+mc = mpf.make_marketcolors(up='g',down='r')
+s  = mpf.make_mpf_style(marketcolors=mc)
+
+
+
+#plots candlestick chart
+mpf.plot(data, **kwargs,style=s)
+
 
