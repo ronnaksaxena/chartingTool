@@ -40,5 +40,24 @@ mpf.plot(data, **kwargs,style=s)
 #get list of moving average values
 sma5 = list(data['Close'].rolling(5).mean())
 
+#checks if trend is double top
+def isDoubleTop(sma5):
+    trend = 'up'
+    lastPrice = sma5[0]
+    firstLMax = secondLMax = float('-inf')
+    firstLMin = float('inf')
+    for i in range(0,len(sma5),3):
+        trend = 'up' if sma5[i] > lastPrice else 'down'
+        lastPrice = sma5[i]
+        if trend=='up' and firstLMin==float('inf'):
+            firstLMax = max(firstLMax,sma5[i])
+        elif trend=='up' and lastPrice>firstLMax:
+            firstLMax = lastPrice
+        
+
+
+
+
+
 
 
