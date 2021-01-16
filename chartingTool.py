@@ -30,29 +30,58 @@ data.reset_index(inplace=True)
 data = data.set_index(data['Date'])
 
 #design for candlestick chart
-kwargs = dict(type='candle',mav=(5),volume=False,title='{} Stock Price'.format(ticker))
+kwargs = dict(type='candle',mav=(10),volume=False,title='{} Stock Price'.format(ticker))
 mc = mpf.make_marketcolors(up='g',down='r')
 s  = mpf.make_mpf_style(marketcolors=mc)
+
+
+#get list of moving average values
+sma10 = list(data['Close'].rolling(10).mean())
+
+#checks if trend is double top
+def isDoubleTop(sma10):
+    trend = 'up'
+    patternStarted = False
+    lastPrice = sma10[4]
+    #local extrema tuples are (Min/Max, index)
+    firstLMax = secondLMax = (-1, -1)
+    firstLMin = (float('inf'), -1)
+    for i in range(5,len(sma10),7):
+        trend = 'up' if sma10[i] > lastPrice else 'down'
+        lastPrice = sma10[i]
+        if not patternStarted:
+            #trying to find first local max/resistance
+            if trend=='up':
+                firstLMax = (sma10[i], i)
+            #check for signs of pattern starting
+            if trend=='down' and -1 < firstLMax[1]:
+                patternStarted = True
+                firstLMin = (sma10[i], i)
+        #check if pattern meets requirements
+        else:
+            #trying to find first local min/support
+            if trend=='down' and secondLMax[1]<0:
+                firstLMin = (sma10[i], i)
+            elif trend=='up':
+                #checks if broke resistance too early then break pattern
+                if sma10[i]*1.10 > (firstLMax[0]):
+                    firstLMax = secondLMax = (-1, -1)
+                    firstLMin = (float('inf'), -1)
+                    patternStarted = False
+                else:
+                    secondLMax = (sma10[i], i)
+            elif trend=='down' and secondLMax[1]>0:
+                #meets pattern if breaks support
+                if sma10[i] < firstLMin[0]:
+                    return True
+    return False
+
 
 #plots candlestick chart
 mpf.plot(data, **kwargs,style=s)
 
-#get list of moving average values
-sma5 = list(data['Close'].rolling(5).mean())
 
-#checks if trend is double top
-def isDoubleTop(sma5):
-    trend = 'up'
-    lastPrice = sma5[0]
-    firstLMax = secondLMax = float('-inf')
-    firstLMin = float('inf')
-    for i in range(0,len(sma5),3):
-        trend = 'up' if sma5[i] > lastPrice else 'down'
-        lastPrice = sma5[i]
-        if trend=='up' and firstLMin==float('inf'):
-            firstLMax = max(firstLMax,sma5[i])
-        elif trend=='up' and lastPrice>firstLMax:
-            firstLMax = lastPrice
+
         
 
 
